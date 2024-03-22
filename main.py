@@ -5,7 +5,7 @@ from writer import Writer
 from syntax import UrbanSyntax
 
 
-def main(filename):
+def def convert_pdf_to_md(filename):
     parser = Parser(filename)
     parser.extract()
     piles = parser.parse()
@@ -20,6 +20,4 @@ def main(filename):
 
     print('Your markdown is at', writer.get_location())
 
-
-if __name__ == '__main__':
-    main('./test.pdf')
+    return writer.get_location() 
