@@ -298,7 +298,7 @@ class Pile(object):
         # text = re.sub(r'(?<!\.\n)(?<!\n\n)(?<!\.\s)\n(?=[A-ZА-Я])', ' ', text)
         ###
         markdown = markdown.strip()
-        print(f'>>>\n{markdown}')
+        # print(f'>>>\n{markdown}')
         return markdown
 
     def _gen_table_markdown(self, syntax):
