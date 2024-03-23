@@ -64,6 +64,9 @@ class Pile(object):
         paragraphs = self._find_paragraphs(tables)
         images = self._find_images()
 
+        if not tables and not paragraphs and not images:
+            return []  # Возвращаем пустой список, если содержимое не найдено
+        
         piles = sorted(tables + paragraphs + images, reverse=True,
                        key=lambda x: x._get_anything().y0)
 
