@@ -1,6 +1,6 @@
 import os
 import re
-
+from pdfminer.image import ImageWriter
 
 class Writer(object):
     def __init__(self):
@@ -34,13 +34,19 @@ class Writer(object):
 
     def _write_simple(self, piles):
         filename = self._title + '.md'
+        folder = filename.split('\\')[0]
+        iw = ImageWriter(f'{folder}\\images')
         with open(filename, 'w', encoding='utf-8') as fwrite:
             for pile in piles:
                 if pile.get_type() == 'image':
                     image = pile.get_image()
-                    self._save_image(image, 'images')
-                markdown = pile.gen_markdown(self._syntax)
-                fwrite.write(markdown)
+                    name = iw.export_image(image)
+                    # self._save_image(image, 'images')
+                    markdown = '![{0}](images/{0})\n\n'.format(name)
+                    fwrite.write(markdown)
+                else:
+                    markdown = pile.gen_markdown(self._syntax)
+                    fwrite.write(markdown)
 
     def _write_gitbook(self, piles):
         intermediate = self._gen_gitbook_intermediate(piles)
@@ -134,14 +140,14 @@ class Writer(object):
         with open(filename, 'w') as fwrite:
             fwrite.write('\n'.join(content))
 
-    def _save_image(self, image, dirname):
-        self._mkdir_anyway(dirname)
-
-        result = None
-        if not image.stream:
-            raise Exception('No stream found')
-        stream = image.stream.get_rawdata()
-        filename = os.path.join(dirname, image.name)
-        with open(filename, 'wb') as fwrite:
-            fwrite.write(stream)
-            fwrite.close()
+    # def _save_image(self, image, dirname):
+    #     self._mkdir_anyway(dirname)
+    #
+    #     result = None
+    #     if not image.stream:
+    #         raise Exception('No stream found')
+    #     stream = image.stream.get_rawdata()
+    #     filename = os.path.join(dirname, image.name)
+    #     with open(filename, 'wb') as fwrite:
+    #         fwrite.write(stream)
+    #         fwrite.close()
