@@ -34,7 +34,7 @@ class Writer(object):
 
     def _write_simple(self, piles):
         filename = self._title + '.md'
-        folder = filename.split('\\')[0]
+        folder = filename.split('\\')[0] if '\\' in filename else ''
         iw = ImageWriter(f'{folder}\\images')
         with open(filename, 'w', encoding='utf-8') as fwrite:
             for pile in piles:
@@ -42,7 +42,7 @@ class Writer(object):
                     image = pile.get_image()
                     name = iw.export_image(image)
                     # self._save_image(image, 'images')
-                    markdown = '![{0}](images/{0})\n\n'.format(name)
+                    markdown = '![{0}](images\{0})\n\n'.format(name)
                     fwrite.write(markdown)
                 else:
                     markdown = pile.gen_markdown(self._syntax)

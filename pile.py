@@ -273,7 +273,7 @@ class Pile(object):
                 continue
             elif pattern.startswith('heading'):
                 lead = '#' * int(pattern[-1])
-                markdown += lead + ' ' + content
+                markdown += '\n' + lead + ' ' + content
             elif pattern.startswith('plain-text'):
                 markdown += content + ' '
             elif pattern.endswith('list-item'):
@@ -313,8 +313,44 @@ class Pile(object):
         return '![{0}](images/{0})\n\n'.format(image.name)
 
     def _gen_table_intermediate(self):
+        self.verticals =[obj for obj in self.verticals if obj.height >= 1 or obj.width >= 1]
         vertical_coor = self._calc_coordinates(self.verticals, 'x0', False)
         horizontal_coor = self._calc_coordinates(self.horizontals, 'y0', True)
+        # Проверим логически невидимые Вертикальные линии по краям таблицы, при наличии добавим их, для этого посмотрим выходят ли горизонтальные линии дальше вертикальных (Т)
+        if len(self.horizontals):
+            ly0 = 0
+            ly1 = 0
+            ry0 = 0
+            ry1 = 0
+            lx = min(self._calc_coordinates(self.horizontals, 'x0', True))
+            rx = max(self._calc_coordinates(self.horizontals, 'x1', True))
+
+            for coor in self.horizontals:
+                if not (lx > coor.x0 - self._SEARCH_DISTANCE or rx < coor.x1 + self._SEARCH_DISTANCE):
+                    continue
+                if coor.x0 < min(vertical_coor) - self._SEARCH_DISTANCE:
+                    if ly0 and ly1:
+                        new_object = LTRect(linewidth=0,
+                                            bbox=(round(lx, 3), ly0, round(lx + self._SEARCH_DISTANCE/2, 3), round(coor.y1, 3)),
+                                            stroke=False)
+                        self.verticals.append(new_object)
+                    ly0 = round(coor.y0, 3)
+                    ly1 = round(coor.y1, 3)
+                if coor.x1 > max(vertical_coor) + self._SEARCH_DISTANCE:
+                    if ry0 and ry1:
+                        new_object = LTRect(linewidth=0,
+                                            bbox=(round(rx, 3), ry0, round(rx + self._SEARCH_DISTANCE/2, 3), round(coor.y1, 3)),
+                                            stroke=False)
+                        self.verticals.append(new_object)
+                    ry0 = round(coor.y0, 3)
+                    ry1 = round(coor.y1, 3)
+
+            # self.verticals.sort(key=lambda t: t.x0)
+            # self.horizontals.sort(key=lambda t: (t.y0, -t.x0))
+
+            vertical_coor = self._calc_coordinates(self.verticals, 'x0', False)
+            horizontal_coor = self._calc_coordinates(self.horizontals, 'y0', True)
+
         num_rows = len(horizontal_coor) - 1
         num_cols = len(vertical_coor) - 1
 
@@ -335,9 +371,9 @@ class Pile(object):
                     continue
 
                 right, colspan = self._find_exist_coor(
-                    bottom, top, col_idx, vertical_coor, 'vertical')
+                    bottom + self._SEARCH_DISTANCE, top - self._SEARCH_DISTANCE, col_idx, vertical_coor, 'vertical')
                 bottom, rowspan = self._find_exist_coor(
-                    left, right, row_idx, horizontal_coor, 'horizontal')
+                    left - self._SEARCH_DISTANCE, right + self._SEARCH_DISTANCE, row_idx, horizontal_coor, 'horizontal')
 
                 cell = {}
                 cell['texts'] = self._find_cell_texts(left, top, right, bottom)
@@ -426,7 +462,7 @@ class Pile(object):
         return obj.x0 <= (left + self._SEARCH_DISTANCE) and (right - self._SEARCH_DISTANCE) <= obj.x1
 
     def _intermediate_to_markdown(self, intermediate):
-        markdown = ''
+        markdown = '\n'
         markdown += self._create_tag('table', True, 0)
         for row in intermediate:
             markdown += self._create_tag('tr', True, 1)
@@ -457,7 +493,8 @@ class Pile(object):
     def _calc_coordinates(self, axes, attr, reverse):
         coor_set = set()
         for axis in axes:
-            coor_set.add(getattr(axis, attr))
+            # coor_set.add(getattr(axis, attr))
+            coor_set.add(round(getattr(axis, attr), 3))
         coor_list = list(coor_set)
         coor_list.sort(reverse=reverse)
         return coor_list
