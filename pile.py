@@ -325,6 +325,9 @@ class Pile(object):
             lx = min(self._calc_coordinates(self.horizontals, 'x0', True))
             rx = max(self._calc_coordinates(self.horizontals, 'x1', True))
 
+            if not len(vertical_coor):
+                vertical_coor = [(lx + rx)/2]
+
             for coor in self.horizontals:
                 if not (lx > coor.x0 - self._SEARCH_DISTANCE or rx < coor.x1 + self._SEARCH_DISTANCE):
                     continue
