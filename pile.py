@@ -40,6 +40,19 @@ class Pile(object):
             if type(obj) in [LTFigure, LTTextBox, LTTextLine, LTTextBoxHorizontal]:
                 obj_stack.extend(reversed(list(obj)))
             elif type(obj) == LTTextLineHorizontal:
+                try:
+                    if len(list(obj)):
+                        font = list(obj)[0].fontname
+                        obj.bold = "Bold" in font
+                        obj.italic = "Italic" in font or "Oblique" in font
+                        obj.font = font
+                except:
+                    obj.font = None
+                    obj.bold = None
+                    obj.italic = None
+
+                obj.chars = len(list(obj))
+                obj.size = round(obj.height, 0)
                 self.texts.append(obj)
             elif type(obj) == LTRect:
                 if obj.width < 1.0:
@@ -267,23 +280,31 @@ class Pile(object):
             content = syntax.purify(text)
             # print(f'<< {content}')
 
+            # if 'heading' in pattern:
+            #     if prevtext.startswith('#'):
+            #         markdown += '\n'
+            #     continue
             if pattern == 'none':
                 if prevtext.startswith('#'):
                     markdown += '\n'
                 continue
             elif pattern.startswith('heading'):
                 lead = '#' * int(pattern[-1])
-                markdown += '\n' + lead + ' ' + content
+                if prevtext.startswith(lead):
+                    markdown += ' ' + content
+                else:
+                    markdown += '\n' + lead + ' ' + content
             elif pattern.startswith('plain-text'):
-                markdown += content + ' '
+                markdown += ' ' + content + ' '
             elif pattern.endswith('list-item'):
-                lead = '' if pattern.startswith('ordered') else '-'
+                lead = '\n#####' if pattern.startswith('ordered') else ' ' # '-'
                 markdown += lead + ' ' + content
             else:
                 raise Exception('Unsupported syntax pattern')
 
             if newline:
-                markdown.strip()
+                # markdown.strip()
+                # markdown = '\n' + markdown + '\n'
                 markdown += '\n'
 
             prevtext = markdown.split('\n')[-1]
@@ -300,7 +321,7 @@ class Pile(object):
         # Дальнейшие правила для обработки текста
         # text = re.sub(r'(?<!\.\n)(?<!\n\n)(?<!\.\s)\n(?=[A-ZА-Я])', ' ', text)
         ###
-        markdown = markdown.strip()
+        # markdown = markdown.strip()
         # print(f'>>>\n{markdown}')
         return markdown
 

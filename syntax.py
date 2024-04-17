@@ -26,20 +26,28 @@ class UrbanSyntax(Syntax):
         if content.isdigit():  # page number
             return 'none'
 
-        if 130 < text.x0 and text.x1 < 460:
-            if text.height > 11:
-                return 'heading-1'
-            if text.height < 12:
+        if 130 < text.x0 and text.x1 < 480:
+            if text.size == 12:
                 return 'heading-2'
+            if text.size < 12:
+                return 'heading-3'
+            if text.size > 12:
+                return 'heading-1'
 
-        if 17.9 < text.height < 18.1:
+        if text.size == 18:
+            return 'heading-4'
+
+        if text.size == 16:
             return 'heading-3'
 
-        if 15.9 < text.height < 16.0:
+        if text.size == 20:
             return 'heading-2'
 
-        if 20.0 < text.height < 20.1:
-            return 'heading-1'
+        if content == content.upper():
+            if text.bold:  # special case for neihu page 2
+                return 'heading-2'
+            else:
+                return 'heading-3'
 
         mo = re.search(r'^(I|II|III|IV|V|VI|VII|VIII|IX|X).', content)
         if mo:
@@ -49,7 +57,7 @@ class UrbanSyntax(Syntax):
         if mo:
             return 'heading-5'
 
-        mo = re.search(r'^\d+\.', content)
+        mo = re.search(r'^(\d+\.)+', content)
         if mo:
             return 'ordered-list-item'
 
