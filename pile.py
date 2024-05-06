@@ -333,10 +333,50 @@ class Pile(object):
         image = self.get_image()
         return '![{0}](images/{0})\n\n'.format(image.name)
 
+    def average_close_numbers(self, arr, closeness):
+        result = []
+        temp = []
+        for num in sorted(arr):
+            if temp and abs(temp[-1] - num) > closeness:
+                result.append(sum(temp) / len(temp))
+                temp = []
+            temp.append(num)
+        if temp:
+            result.append(sum(temp) / len(temp))
+        return result
+
     def _gen_table_intermediate(self):
-        self.verticals =[obj for obj in self.verticals if obj.height >= 1 or obj.width >= 1]
+        # self.verticals =[obj for obj in self.verticals if obj.height >= 1 or obj.width >= 1]
+        self.verticals = [obj for obj in self.verticals if obj.height >= 1 or obj.width >= 1] \
+            if isinstance(self.verticals, list) else None
         vertical_coor = self._calc_coordinates(self.verticals, 'x0', False)
         horizontal_coor = self._calc_coordinates(self.horizontals, 'y0', True)
+
+        vertical_coor = self.average_close_numbers(vertical_coor, 2)
+
+        # for el in self.verticals:
+        #     for coor in vertical_coor:
+        #         if self.is_in_range(el.x0, coor):
+        #             el.x0 = coor
+        #         if self.is_in_range(el.x1, coor):
+        #             el.x1 = coor
+        #     for coor in horizontal_coor:
+        #         if self.is_in_range(el.y0, coor):
+        #             el.y0 = coor
+        #         if self.is_in_range(el.y1, coor):
+        #             el.y1 = coor
+        # for el in self.horizontals:
+        #     for coor in vertical_coor:
+        #         if self.is_in_range(el.x0, coor):
+        #             el.x0 = coor
+        #         if self.is_in_range(el.x1, coor):
+        #             el.x1 = coor
+        #     for coor in horizontal_coor:
+        #         if self.is_in_range(el.y0, coor):
+        #             el.y0 = coor
+        #         if self.is_in_range(el.y1, coor):
+        #             el.y1 = coor
+
         # Проверим логически невидимые Вертикальные линии по краям таблицы, при наличии добавим их, для этого посмотрим выходят ли горизонтальные линии дальше вертикальных (Т)
         if len(self.horizontals):
             ly0 = 0
@@ -397,7 +437,12 @@ class Pile(object):
                 right, colspan = self._find_exist_coor(
                     bottom + self._SEARCH_DISTANCE, top - self._SEARCH_DISTANCE, col_idx, vertical_coor, 'vertical')
                 bottom, rowspan = self._find_exist_coor(
-                    left - self._SEARCH_DISTANCE, right + self._SEARCH_DISTANCE, row_idx, horizontal_coor, 'horizontal')
+                    left + self._SEARCH_DISTANCE, right - self._SEARCH_DISTANCE, row_idx, horizontal_coor, 'horizontal')
+
+                if rowspan == 0:
+                    rowspan = 1
+                    colspan = num_cols
+                    right = rx
 
                 cell = {}
                 cell['texts'] = self._find_cell_texts(left, top, right, bottom)
@@ -419,8 +464,7 @@ class Pile(object):
 
     def _in_range(self, left, top, right, bottom, obj):
         return (left - self._SEARCH_DISTANCE) <= obj.x0 < obj.x1 <= (right + self._SEARCH_DISTANCE) and \
-            (bottom - self._SEARCH_DISTANCE) <= obj.y0 < obj.y1 <= (top +
-                                                                    self._SEARCH_DISTANCE)
+            (bottom - self._SEARCH_DISTANCE) <= obj.y0 < obj.y1 <= (top + self._SEARCH_DISTANCE)
 
     def _is_ignore_cell(self, left, top, right, bottom):
         left_exist = self._line_exists(left, bottom, top, 'vertical')
@@ -438,6 +482,9 @@ class Pile(object):
                 return line_coor[start_idx + 1], 1
             coor = line_coor[start_idx + span]
             line_exist = self._line_exists(coor, minimum, maximum, direction)
+
+        if direction == 'horizontal' and len(line_coor) == start_idx + span + 1:  # ??????
+            return line_coor[start_idx + 1], 1
 
         # Если линия найдена, возвращаем ее координаты и span
         return coor, span
@@ -495,6 +542,12 @@ class Pile(object):
             markdown += self._create_tag('tr', False, 1)
         markdown += self._create_tag('table', False, 0)
         markdown += '\n'
+
+        # # Regular expression pattern for matching empty table rows.
+        # pattern = r"<tr(.*)>\s+<td><\/td>\s+<\/tr>\n"
+        # # Substitute the empty rows with an empty string.
+        # markdown = re.sub(pattern, '', markdown)
+
         return markdown
 
     def _create_tag(self, tag_name, start, level):
